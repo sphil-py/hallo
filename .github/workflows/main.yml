@@ -1,0 +1,31 @@
+name: Build macOS App
+
+on: [push]
+
+jobs:
+  build-macos:
+    runs-on: macos-latest  # ✅ Echter Mac-Computer
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build Standalone App
+        run: |
+          pyinstaller --onefile --windowed --name "MeinProgramm" main.py
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-app
+          path: dist/MeinProgramm.app
