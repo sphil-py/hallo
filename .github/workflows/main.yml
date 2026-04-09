@@ -22,7 +22,7 @@ jobs:
 
       - name: Build Standalone App
         run: |
-          pyinstaller --onefile --windowed --name "MeinProgramm" main.py
+          pyinstaller --onefile --windowed --name a_dropdown2.py
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4  # ✅ Korrekt: @v4
