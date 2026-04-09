@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   build-macos:
-    runs-on: macos-latest  # ✅ Echter Mac-Computer
+    runs-on: macos-latest
 
     steps:
       - name: Checkout Code
@@ -25,7 +25,7 @@ jobs:
           pyinstaller --onefile --windowed --name "MeinProgramm" main.py
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # ✅ Korrekt: @v4
         with:
           name: macos-app
           path: dist/MeinProgramm.app
