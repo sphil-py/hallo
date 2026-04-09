@@ -1,0 +1,8 @@
+- name: Debug: Prüfe dist-Ordner
+  run: |
+    ls -la dist/
+    if [ -f "dist/MeinProgramm.app" ]; then
+      echo "✅ Datei gefunden: dist/MeinProgramm.app"
+    else
+      echo "❌ Datei nicht gefunden!"
+      exit 1
