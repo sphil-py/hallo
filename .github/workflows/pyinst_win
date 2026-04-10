@@ -34,7 +34,7 @@ jobs:
 
       - name: Build Standalone App
         run: |
-          pyinstaller --onefile --windowed --name "MeinProgramm" curs_pos.py
+          pyinstaller --onefile --windowed --name "MeinProgramm.exe" curs_pos.py
           ls -la dist
           test -e "${{ matrix.artifact_path }}"
         shell: bash
