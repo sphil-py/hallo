@@ -1,1 +1,73 @@
+name: Build Standalone App
 
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        python-version: [3.11]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build Standalone App
+        run: |
+          # Erstelle die App mit PyInstaller
+          pyinstaller --onefile --windowed --name "MeinProgramm" a_dropdown2.py
+
+          # Prüfe, ob die Datei existiert
+          if [ -f "dist/MeinProgramm.app" ]; then
+            echo "✅ macOS App erstellt"
+          elif [ -f "dist/MeinProgramm.exe" ]; then
+            echo "✅ Windows EXE erstellt"
+          elif [ -f "dist/MeinProgramm" ]; then
+            echo "✅ Linux App erstellt"
+          else
+            echo "❌ Keine App erstellt!"
+            exit 1
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-app
+          path: |
+            dist/MeinProgramm.app
+            dist/MeinProgramm.exe
+            dist/MeinProgramm
+          if: ${{ matrix.os == 'macos-latest' || matrix.os == 'windows-latest' || matrix.os == 'ubuntu-latest' }}
+
+      - name: Create Release (only on main branch)
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/MeinProgramm.app
+            dist/MeinProgramm.exe
+            dist/MeinProgramm
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: "Automatisch erstellte Standalone-App für ${{ matrix.os }}."
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
