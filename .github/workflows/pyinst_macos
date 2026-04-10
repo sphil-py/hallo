@@ -1,4 +1,4 @@
-name: Build Standalone macos
+name: Build pyinst_macos
 
 on:
   push:
