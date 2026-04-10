@@ -1,0 +1,57 @@
+name: Build Standalone (windows, macos, ubuntu)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            python-version: "3.11"
+            artifact_path: dist/MeinProgramm.exe
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+        shell: bash
+
+      - name: Build Standalone App
+        run: |
+          pyinstaller --onefile --windowed --name "MeinProgramm" curs_pos.py
+          ls -la dist
+          test -e "${{ matrix.artifact_path }}"
+        shell: bash
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-app
+          path: ${{ matrix.artifact_path }}
+
+      - name: Create Release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.run_number }}
+          name: Release ${{ github.run_number }}
+          files: ${{ matrix.artifact_path }}
+          body: "Automatisch erstellte Standalone-App für ${{ matrix.os }}."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
