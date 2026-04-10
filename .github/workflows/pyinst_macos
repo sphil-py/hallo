@@ -1,4 +1,4 @@
-name: Build Standalone (windows, macos, ubuntu)
+name: Build Standalone macos
 
 on:
   push:
