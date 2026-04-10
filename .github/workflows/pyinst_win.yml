@@ -1,4 +1,4 @@
-name: Build Standalone win
+name: Build pyinst_win
 
 on:
   push:
