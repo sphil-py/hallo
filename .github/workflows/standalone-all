@@ -34,7 +34,7 @@ jobs:
       - name: Build Standalone App
         run: |
           # Erstelle die App mit PyInstaller
-          pyinstaller --onefile --windowed --name "MeinProgramm" a_dropdown2.py
+          pyinstaller --onefile --windowed --name "MeinProgramm" curs_pos.py
 
           # Prüfe, ob die Datei existiert
           if [ -f "dist/MeinProgramm.app" ]; then
