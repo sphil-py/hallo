@@ -22,7 +22,7 @@ jobs:
 
       - name: Build Standalone App
         run: |
-          pyinstaller --onefile --name "MeinProgramm" curs_pos.py
+          pyinstaller --onefile --windowed --name "MeinProgramm" --distpath . curs_pos.py
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
