@@ -1,0 +1,132 @@
+name: Build and Release Standalone
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            os_short: win
+            built_file: dist/MeinProgramm.exe
+            asset_name: MeinProgramm-win.exe
+          - os: macos-latest
+            os_short: mac
+            built_file: dist/MeinProgramm
+            asset_name: MeinProgramm-mac
+          - os: ubuntu-latest
+            os_short: linux
+            built_file: dist/MeinProgramm
+            asset_name: MeinProgramm-linux
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyInstaller
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build app
+        shell: bash
+        run: |
+          pyinstaller --onefile --windowed --name "MeinProgramm" curs_pos.py
+          echo "Built files:"
+          ls -la dist
+
+      - name: Verify build output
+        shell: bash
+        run: |
+          test -e "${{ matrix.built_file }}"
+
+      - name: Prepare release asset
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          cp -R "${{ matrix.built_file }}" "release-assets/${{ matrix.asset_name }}"
+          ls -la release-assets
+
+      - name: Upload artifact for release job
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os_short }}-asset
+          path: release-assets/${{ matrix.asset_name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Create release metadata
+        shell: bash
+        run: |
+          RELEASE_DATE=$(TZ=Europe/Berlin date +'%Y-%m-%d')
+          RELEASE_TAG="$RELEASE_DATE"
+          RELEASE_NAME="$RELEASE_DATE"
+
+          echo "RELEASE_DATE=$RELEASE_DATE" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
+          echo "RELEASE_NAME=$RELEASE_NAME" >> "$GITHUB_ENV"
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: win-asset
+          path: release-downloads
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mac-asset
+          path: release-downloads
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-asset
+          path: release-downloads
+
+      - name: Show downloaded assets
+        shell: bash
+        run: |
+          find release-downloads -maxdepth 2 -type f | sort
+
+      - name: Delete existing release with same date
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release delete "$RELEASE_TAG" --cleanup-tag -y
+          fi
+
+      - name: Create release with all 3 assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            release-downloads/MeinProgramm-win.exe \
+            release-downloads/MeinProgramm-mac \
+            release-downloads/MeinProgramm-linux \
+            --title "$RELEASE_NAME" \
+            --notes "Standalone build for Windows, macOS, and Linux."
